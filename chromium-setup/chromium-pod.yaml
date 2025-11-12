@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chromium-runtime
+spec:
+  volumes:
+    - name: chromium-storage
+      persistentVolumeClaim:
+        claimName: chromium-pvc
+  containers:
+    - name: chromium
+      image: chromium-base:latest
+      imagePullPolicy: Never
+      env:
+        - name: CHROMIUM_VERSION
+          value: "v5"
+      volumeMounts:
+        - name: chromium-storage
+          mountPath: /opt/chromium-versions
+      command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Requested Chromium version: $CHROMIUM_VERSION"
+          if [ -d "/opt/chromium-versions/$CHROMIUM_VERSION" ]; then
+            cp -r /opt/chromium-versions/$CHROMIUM_VERSION/* /usr/local/chromium/
+            echo "Copied Chromium version $CHROMIUM_VERSION to runtime path"
+          else
+            echo "Version directory not found!"
+          fi
+          echo "Contents of /usr/local/chromium:"
+          ls -l /usr/local/chromium || true
+          echo "Chromium version file:"
+          cat /usr/local/chromium/version.txt || true
+          echo "Container will now stay alive..."
+          tail -f /dev/null
+

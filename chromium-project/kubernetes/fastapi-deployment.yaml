@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chromium-api-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chromium-pod-manager
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "create", "delete", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/status"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chromium-api-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: chromium-api-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: chromium-pod-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chromium-api
+  namespace: default
+  labels:
+    app: chromium-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chromium-api
+  template:
+    metadata:
+      labels:
+        app: chromium-api
+    spec:
+      serviceAccountName: chromium-api-sa
+      containers:
+      - name: api
+        image: 285982079759.dkr.ecr.us-east-1.amazonaws.com/chromium-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: ECR_REGISTRY
+          value: "285982079759.dkr.ecr.us-east-1.amazonaws.com"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromium-api-service
+  namespace: default
+  labels:
+    app: chromium-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: chromium-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+    name: http
