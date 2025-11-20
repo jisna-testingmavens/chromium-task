@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir requests
+
+COPY download-chromium.py /app/download-chromium.py
+
+WORKDIR /app
+
+CMD ["python3", "download-chromium.py"]

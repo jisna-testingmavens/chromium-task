@@ -1,0 +1,68 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies + VNC + noVNC
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg2 \
+    ca-certificates \
+    apt-transport-https \
+    software-properties-common \
+    # Chromium dependencies
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libatspi2.0-0 \
+    libxshmfence1 \
+    fonts-liberation \
+    libappindicator3-1 \
+    xdg-utils \
+    libglib2.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxext6 \
+    unzip \
+    # VNC and Desktop Environment
+    x11vnc \
+    xvfb \
+    fluxbox \
+    novnc \
+    websockify \
+    supervisor \
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /opt/chromium /root/.vnc /var/log/supervisor
+
+# VNC password (you can change this)
+RUN x11vnc -storepasswd chromium /root/.vnc/passwd
+
+# Supervisor config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# VNC startup script
+COPY start-vnc.sh /usr/local/bin/start-vnc.sh
+RUN chmod +x /usr/local/bin/start-vnc.sh
+
+# Expose VNC port (5900) and noVNC port (6080)
+EXPOSE 5900 6080
+
+WORKDIR /root
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

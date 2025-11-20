@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chromium-downloader
+  namespace: default
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: chromium-downloader
+    spec:
+      containers:
+      - name: downloader
+        image: 285982079759.dkr.ecr.us-east-1.amazonaws.com/chromium-downloader:latest
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: chromium-storage
+          mountPath: /opt/chromium-versions
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: chromium-storage
+        persistentVolumeClaim:
+          claimName: chromium-versions-pvc
+      restartPolicy: OnFailure
