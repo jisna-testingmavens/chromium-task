@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guacamole-config
+  namespace: guac
+data:
+  guacamole.properties: |
+    api-enabled: true
+

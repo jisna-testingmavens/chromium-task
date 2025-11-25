@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guacamole
+  namespace: guac
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guacamole
+  template:
+    metadata:
+      labels:
+        app: guacamole
+    spec:
+      containers:
+        - name: guacamole
+          image: guacamole/guacamole:1.6.0
+          env:
+            - name: GUACAMOLE_HOME
+              value: /etc/guacamole
+            - name: JSON_SECRET_HEX
+              valueFrom:
+                secretKeyRef:
+                  name: guac-json-secret
+                  key: json-secret-hex      # FIXED ✔
+          volumeMounts:
+            - name: guac-config
+              mountPath: /etc/guacamole/guacamole.properties
+              subPath: guacamole.properties
+            - name: guac-secret
+              mountPath: /etc/guacamole/guac-json-secret.hex
+              subPath: json-secret-hex     # FIXED ✔
+      volumes:
+        - name: guac-config
+          configMap:
+            name: guacamole-properties
+        - name: guac-secret
+          secret:
+            secretName: guac-json-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: guacamole
+  namespace: guac
+spec:
+  selector:
+    app: guacamole
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+

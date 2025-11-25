@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: guac-api
+  namespace: guac
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: guac-api-role
+  namespace: guac
+rules:
+  - apiGroups: [""]
+    resources: ["services","pods"]
+    verbs: ["get","list","create","patch","update","delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get","list","create","patch","update","delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: guac-api-binding
+  namespace: guac
+subjects:
+  - kind: ServiceAccount
+    name: guac-api
+    namespace: guac
+roleRef:
+  kind: Role
+  name: guac-api-role
+  apiGroup: rbac.authorization.k8s.io
+
